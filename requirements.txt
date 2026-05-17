@@ -1,0 +1,11 @@
+fastapi
+uvicorn
+pymongo
+python-dotenv
+websockets
+requests
+streamlit
+plotly
+pandas
+streamlit-authenticator
+twilio
