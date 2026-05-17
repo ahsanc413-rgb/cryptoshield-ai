@@ -1,7 +1,16 @@
-import sys
+
 import os
+import sys
 import requests
-from datetime import datetime
+import streamlit as st
+import pandas as pd
+import plotly.express as px
+import plotly.graph_objects as go
+import streamlit_authenticator as stauth
+
+# =====================================
+# PYTHON PATH FIX
+# =====================================
 
 sys.path.append(
     os.path.abspath(
@@ -12,29 +21,19 @@ sys.path.append(
     )
 )
 
-import streamlit as st
-import pandas as pd
-import plotly.express as px
-import plotly.graph_objects as go
-import streamlit_authenticator as stauth
-
-# ==========================================
-# SAFE AUTO REFRESH IMPORT
-# ==========================================
+# =====================================
+# OPTIONAL AUTO REFRESH
+# =====================================
 
 try:
-    from streamlit_autorefresh import (
-        st_autorefresh
-    )
+    from streamlit_autorefresh import st_autorefresh
+    AUTO_REFRESH = True
 except:
+    AUTO_REFRESH = False
 
-    def st_autorefresh(*args, **kwargs):
-        pass
-
-
-# ==========================================
-# PAGE CONFIG
-# ==========================================
+# =====================================
+# STREAMLIT CONFIG
+# =====================================
 
 st.set_page_config(
     page_title="CryptoShield AI",
@@ -43,172 +42,82 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+# =====================================
+# CUSTOM UI
+# =====================================
 
-# ==========================================
-# CUSTOM CSS
-# ==========================================
+st.markdown(
+    """
+    <style>
 
-st.markdown("""
-<style>
+    .stApp {
+        background-color: #050816;
+        color: white;
+    }
 
-html, body, [class*="css"] {
+    section[data-testid="stSidebar"] {
+        background-color: #111827;
+    }
 
-    background-color: #0E1117;
-    color: white;
-    font-family: Arial;
-}
+    .metric-card {
+        background: #111827;
+        padding: 20px;
+        border-radius: 12px;
+        border: 1px solid #1f2937;
+    }
 
-.stApp {
-    background-color: #0E1117;
-}
+    </style>
+    """,
+    unsafe_allow_html=True
+)
 
-.main-title {
+# =====================================
+# LOGIN SYSTEM
+# =====================================
 
-    font-size: 55px;
-    font-weight: bold;
-    color: white;
-}
-
-.sub-title {
-
-    font-size: 22px;
-    color: #A1A1AA;
-    margin-bottom: 20px;
-}
-
-.metric-card {
-
-    background: #161B22;
-    padding: 20px;
-    border-radius: 15px;
-    border: 1px solid #30363D;
-}
-
-.metric-label {
-
-    color: #9CA3AF;
-    font-size: 16px;
-}
-
-.metric-value {
-
-    font-size: 30px;
-    font-weight: bold;
-    color: white;
-}
-
-.success-box {
-
-    background: #052e16;
-    padding: 15px;
-    border-radius: 12px;
-    border: 1px solid #14532d;
-}
-
-.warning-box {
-
-    background: #3f2f00;
-    padding: 15px;
-    border-radius: 12px;
-    border: 1px solid #854d0e;
-}
-
-.danger-box {
-
-    background: #450a0a;
-    padding: 15px;
-    border-radius: 12px;
-    border: 1px solid #991b1b;
-}
-
-</style>
-""", unsafe_allow_html=True)
-
-
-# ==========================================
-# LOGIN CONFIG
-# ==========================================
-
-names = [
-    "Ahsan"
-]
-
-usernames = [
-    "admin"
-]
-
-passwords = [
-    "admin123"
-]
+names = ["Ahsan"]
+usernames = ["admin"]
+passwords = ["admin123"]
 
 credentials = {
-
     "usernames": {
-
         usernames[0]: {
-
             "name": names[0],
-
             "password": passwords[0]
         }
     }
 }
 
-
-# ==========================================
-# AUTHENTICATION
-# ==========================================
-
 authenticator = stauth.Authenticate(
-
     credentials,
-
     "cryptoshield_cookie",
-
-    "abcdef",
-
-    cookie_expiry_days=7
+    "cryptoshield_ai_secure_key_2026_super_secret",
+    cookie_expiry_days=30
 )
 
+# =====================================
+# LOGIN UI
+# =====================================
 
-# ==========================================
-# LOGIN SYSTEM
-# ==========================================
+authenticator.login(location="main")
 
-authenticator.login(
-    location="main"
-)
+name = st.session_state.get("name")
+authentication_status = st.session_state.get("authentication_status")
+username = st.session_state.get("username")
 
-name = st.session_state.get(
-    "name"
-)
-
-authentication_status = st.session_state.get(
-    "authentication_status"
-)
-
-
-# ==========================================
-# LOGIN CHECK
-# ==========================================
+# =====================================
+# LOGIN VALIDATION
+# =====================================
 
 if authentication_status is False:
 
-    st.error(
-        "Incorrect username/password"
-    )
+    st.error("Incorrect username/password")
 
 elif authentication_status is None:
 
-    st.warning(
-        "Please login"
-    )
+    st.warning("Please login to continue")
 
 elif authentication_status:
-
-    # ==========================================
-    # SIDEBAR
-    # ==========================================
 
     authenticator.logout(
         "Logout",
@@ -219,598 +128,316 @@ elif authentication_status:
         f"Welcome {name}"
     )
 
-    st.sidebar.title(
-        "🛡️ CryptoShield AI"
+    st.sidebar.title("CryptoShield AI")
+
+    st.sidebar.markdown("---")
+
+    st.sidebar.info(
+        "AI-powered crypto risk monitoring SaaS"
     )
 
-    menu = st.sidebar.radio(
-        "Navigation",
-        [
-            "Dashboard",
-            "AI Detection",
-            "Whale Alerts",
-            "WhatsApp Alerts",
-            "User Profile",
-            "SaaS Plans",
-            "Settings"
-        ]
+    # =====================================
+    # AUTO REFRESH
+    # =====================================
+
+    if AUTO_REFRESH:
+
+        st_autorefresh(
+            interval=5000,
+            key="dashboard_refresh"
+        )
+
+    # =====================================
+    # HEADER
+    # =====================================
+
+    st.title("🚨 CryptoShield AI")
+
+    st.subheader(
+        "Real-Time Crypto Risk Intelligence Platform"
     )
 
-    st_autorefresh(
-        interval=15000,
-        key="dashboard_refresh"
-    )
-
-    # ==========================================
-    # LIVE API
-    # ==========================================
+    # =====================================
+    # BACKEND API
+    # =====================================
 
     API_BASE_URL = (
         "https://cryptoshield-ai-9sak.onrender.com"
     )
 
-    trades = []
-    alerts = []
-    metrics = {}
+    # =====================================
+    # FETCH DATA
+    # =====================================
 
     try:
 
         trades_response = requests.get(
-            f"{API_BASE_URL}/api/trades",
-            timeout=15
+            f"{API_BASE_URL}/api/trades"
         )
 
         alerts_response = requests.get(
-            f"{API_BASE_URL}/api/alerts",
-            timeout=15
+            f"{API_BASE_URL}/api/alerts"
         )
 
         metrics_response = requests.get(
-            f"{API_BASE_URL}/api/metrics",
-            timeout=15
+            f"{API_BASE_URL}/api/metrics"
         )
 
-        if trades_response.status_code == 200:
-            trades = trades_response.json()
-
-        if alerts_response.status_code == 200:
-            alerts = alerts_response.json()
-
-        if metrics_response.status_code == 200:
-            metrics = metrics_response.json()
+        trades = trades_response.json()
+        alerts = alerts_response.json()
+        metrics = metrics_response.json()
 
     except Exception:
 
-        st.warning(
-            "Backend sleeping or temporarily unavailable"
+        st.error(
+            "Backend API not reachable"
         )
+
+        st.stop()
+
+    # =====================================
+    # DATAFRAMES
+    # =====================================
 
     trades_df = pd.DataFrame(trades)
     alerts_df = pd.DataFrame(alerts)
 
-    # ==========================================
-    # DASHBOARD
-    # ==========================================
+    # =====================================
+    # METRICS ROW
+    # =====================================
 
-    if menu == "Dashboard":
+    metric1, metric2, metric3, metric4 = st.columns(4)
 
-        st.markdown(
-            '<div class="main-title">🚨 CryptoShield AI</div>',
-            unsafe_allow_html=True
+    metric1.metric(
+        "Total Trades",
+        metrics.get("total_trades", 0)
+    )
+
+    metric2.metric(
+        "Risk Alerts",
+        metrics.get("total_alerts", 0)
+    )
+
+    metric3.metric(
+        "Most Active Asset",
+        metrics.get("most_active_asset", "N/A")
+    )
+
+    metric4.metric(
+        "System Status",
+        "LIVE"
+    )
+
+    st.divider()
+
+    # =====================================
+    # ALERTS TABLE
+    # =====================================
+
+    st.subheader("🚨 Recent Risk Alerts")
+
+    if not alerts_df.empty:
+
+        st.dataframe(
+            alerts_df,
+            use_container_width=True,
+            height=320
         )
 
-        st.markdown(
-            '<div class="sub-title">AI-Powered Crypto Risk Intelligence Platform</div>',
-            unsafe_allow_html=True
+    else:
+
+        st.info("No alerts detected")
+
+    # =====================================
+    # LIVE MARKET TABLE
+    # =====================================
+
+    st.subheader("📈 Live Market Trades")
+
+    if not trades_df.empty:
+
+        st.dataframe(
+            trades_df,
+            use_container_width=True,
+            height=400
         )
 
-        # ==========================================
-        # METRICS
-        # ==========================================
+    else:
 
-        col1, col2, col3, col4 = st.columns(4)
+        st.warning("No market data available")
 
-        with col1:
+    # =====================================
+    # CHARTS ROW
+    # =====================================
 
-            st.markdown(
-                f'''
-                <div class="metric-card">
-                    <div class="metric-label">Total Trades</div>
-                    <div class="metric-value">{metrics.get("total_trades", 0)}</div>
-                </div>
-                ''',
-                unsafe_allow_html=True
+    chart_left, chart_right = st.columns(2)
+
+    # =====================================
+    # PIE CHART
+    # =====================================
+
+    with chart_left:
+
+        if not trades_df.empty:
+
+            st.subheader("📊 Asset Distribution")
+
+            symbol_counts = (
+                trades_df["symbol"]
+                .value_counts()
+                .reset_index()
             )
 
-        with col2:
-
-            st.markdown(
-                f'''
-                <div class="metric-card">
-                    <div class="metric-label">Risk Alerts</div>
-                    <div class="metric-value">{metrics.get("total_alerts", 0)}</div>
-                </div>
-                ''',
-                unsafe_allow_html=True
-            )
-
-        with col3:
-
-            st.markdown(
-                f'''
-                <div class="metric-card">
-                    <div class="metric-label">Most Active</div>
-                    <div class="metric-value">{metrics.get("most_active_asset", "BTCUSDT")}</div>
-                </div>
-                ''',
-                unsafe_allow_html=True
-            )
-
-        with col4:
-
-            st.markdown(
-                '''
-                <div class="metric-card">
-                    <div class="metric-label">System Status</div>
-                    <div class="metric-value">LIVE</div>
-                </div>
-                ''',
-                unsafe_allow_html=True
-            )
-
-        st.divider()
-
-        # ==========================================
-        # AI SUMMARY
-        # ==========================================
-
-        st.subheader(
-            "🧠 AI Market Summary"
-        )
-
-        if not alerts_df.empty:
-
-            high_risk = len(
-                alerts_df[
-                    alerts_df["risk_score"] > 80
-                ]
-            )
-
-            st.markdown(
-                f'''
-                <div class="warning-box">
-                ⚠️ AI detected {high_risk} high-risk market events.
-                Whale activity and suspicious patterns detected.
-                </div>
-                ''',
-                unsafe_allow_html=True
-            )
-
-        else:
-
-            st.markdown(
-                '''
-                <div class="success-box">
-                ✅ Market conditions stable.
-                No significant anomalies detected.
-                </div>
-                ''',
-                unsafe_allow_html=True
-            )
-
-        st.divider()
-
-        # ==========================================
-        # LIVE TABLES
-        # ==========================================
-
-        left, right = st.columns(2)
-
-        with left:
-
-            st.subheader(
-                "📈 Live Trades"
-            )
-
-            if not trades_df.empty:
-
-                st.dataframe(
-                    trades_df.head(100),
-                    use_container_width=True,
-                    height=400
-                )
-
-            else:
-
-                st.info(
-                    "No live trades available"
-                )
-
-        with right:
-
-            st.subheader(
-                "🚨 Risk Alerts"
-            )
-
-            if not alerts_df.empty:
-
-                st.dataframe(
-                    alerts_df.head(100),
-                    use_container_width=True,
-                    height=400
-                )
-
-            else:
-
-                st.success(
-                    "No active threats"
-                )
-
-        st.divider()
-
-        # ==========================================
-        # CHARTS
-        # ==========================================
-
-        chart_left, chart_right = st.columns(2)
-
-        with chart_left:
-
-            st.subheader(
-                "📊 Asset Distribution"
-            )
-
-            if (
-                not trades_df.empty
-                and "symbol" in trades_df.columns
-            ):
-
-                symbol_counts = (
-                    trades_df[
-                        "symbol"
-                    ]
-                    .value_counts()
-                    .reset_index()
-                )
-
-                symbol_counts.columns = [
-                    "symbol",
-                    "count"
-                ]
-
-                pie_fig = px.pie(
-                    symbol_counts,
-                    names="symbol",
-                    values="count"
-                )
-
-                st.plotly_chart(
-                    pie_fig,
-                    use_container_width=True
-                )
-
-        with chart_right:
-
-            st.subheader(
-                "📉 Candlestick Chart"
-            )
-
-            if (
-                not trades_df.empty
-                and "symbol" in trades_df.columns
-                and "price" in trades_df.columns
-                and "trade_time" in trades_df.columns
-            ):
-
-                chart_symbols = [
-                    "BTCUSDT",
-                    "ETHUSDT",
-                    "DOGEUSDT",
-                    "SOLUSDT"
-                ]
-
-                selected_symbol = st.selectbox(
-                    "Select Asset",
-                    chart_symbols
-                )
-
-                filtered_df = trades_df[
-                    trades_df["symbol"]
-                    == selected_symbol
-                ]
-
-                if not filtered_df.empty:
-
-                    filtered_df[
-                        "trade_time"
-                    ] = pd.to_datetime(
-                        filtered_df[
-                            "trade_time"
-                        ]
-                    )
-
-                    candle_data = (
-                        filtered_df
-                        .groupby(
-                            pd.Grouper(
-                                key="trade_time",
-                                freq="1min"
-                            )
-                        )
-                        .agg({
-                            "price": [
-                                "first",
-                                "max",
-                                "min",
-                                "last"
-                            ]
-                        })
-                    )
-
-                    candle_data.columns = [
-                        "open",
-                        "high",
-                        "low",
-                        "close"
-                    ]
-
-                    candle_data = (
-                        candle_data
-                        .dropna()
-                        .reset_index()
-                    )
-
-                    fig = go.Figure(
-                        data=[
-                            go.Candlestick(
-                                x=candle_data[
-                                    "trade_time"
-                                ],
-                                open=candle_data[
-                                    "open"
-                                ],
-                                high=candle_data[
-                                    "high"
-                                ],
-                                low=candle_data[
-                                    "low"
-                                ],
-                                close=candle_data[
-                                    "close"
-                                ]
-                            )
-                        ]
-                    )
-
-                    st.plotly_chart(
-                        fig,
-                        use_container_width=True
-                    )
-
-    # ==========================================
-    # AI DETECTION
-    # ==========================================
-
-    elif menu == "AI Detection":
-
-        st.title(
-            "🤖 AI Scam Detection"
-        )
-
-        suspicious_text = st.text_area(
-            "Paste suspicious crypto message"
-        )
-
-        if st.button(
-            "Analyze Message"
-        ):
-
-            keywords = [
-                "guaranteed",
-                "double",
-                "100%",
-                "free usdt",
-                "send btc"
+            symbol_counts.columns = [
+                "symbol",
+                "count"
             ]
 
-            detected = False
-
-            for word in keywords:
-
-                if word in suspicious_text.lower():
-                    detected = True
-
-            if detected:
-
-                st.markdown(
-                    '''
-                    <div class="danger-box">
-                    🚨 HIGH RISK SCAM DETECTED
-                    </div>
-                    ''',
-                    unsafe_allow_html=True
-                )
-
-            else:
-
-                st.markdown(
-                    '''
-                    <div class="success-box">
-                    ✅ Message appears safe
-                    </div>
-                    ''',
-                    unsafe_allow_html=True
-                )
-
-    # ==========================================
-    # WHALE ALERTS
-    # ==========================================
-
-    elif menu == "Whale Alerts":
-
-        st.title(
-            "🐋 Whale Activity Dashboard"
-        )
-
-        if not alerts_df.empty:
-
-            whale_df = alerts_df.sort_values(
-                by="trade_quantity",
-                ascending=False
+            pie_fig = px.pie(
+                symbol_counts,
+                names="symbol",
+                values="count",
+                title="Trading Activity"
             )
 
-            st.dataframe(
-                whale_df.head(20),
+            st.plotly_chart(
+                pie_fig,
                 use_container_width=True
             )
 
-        else:
+    # =====================================
+    # RISK CHART
+    # =====================================
 
-            st.info(
-                "No whale activity available"
+    with chart_right:
+
+        if not alerts_df.empty:
+
+            st.subheader("⚠️ Risk Distribution")
+
+            risk_counts = (
+                alerts_df["risk_level"]
+                .value_counts()
+                .reset_index()
             )
 
-    # ==========================================
-    # WHATSAPP ALERTS
-    # ==========================================
-
-    elif menu == "WhatsApp Alerts":
-
-        st.title(
-            "📱 WhatsApp Alert System"
-        )
-
-        phone = st.text_input(
-            "Enter WhatsApp Number"
-        )
-
-        alert_type = st.selectbox(
-            "Alert Type",
-            [
-                "Whale Alerts",
-                "Scam Alerts",
-                "Market Crash",
-                "All Alerts"
+            risk_counts.columns = [
+                "risk_level",
+                "count"
             ]
-        )
 
-        if st.button(
-            "Enable Alerts"
-        ):
-
-            st.success(
-                f"WhatsApp alerts enabled for {phone}"
+            risk_fig = px.bar(
+                risk_counts,
+                x="risk_level",
+                y="count",
+                title="Detected Risk Levels"
             )
 
-    # ==========================================
-    # USER PROFILE
-    # ==========================================
-
-    elif menu == "User Profile":
-
-        st.title(
-            "👤 User Profile"
-        )
-
-        st.text_input(
-            "Username",
-            value=name
-        )
-
-        st.text_input(
-            "Subscription",
-            value="PRO"
-        )
-
-        st.success(
-            "Profile Loaded"
-        )
-
-    # ==========================================
-    # SAAS PLANS
-    # ==========================================
-
-    elif menu == "SaaS Plans":
-
-        st.title(
-            "💳 CryptoShield SaaS Plans"
-        )
-
-        col1, col2, col3 = st.columns(3)
-
-        with col1:
-
-            st.markdown(
-                '''
-                ### FREE
-                $0/month
-
-                - Basic Monitoring
-                - Public Dashboard
-                - Limited Alerts
-                '''
+            st.plotly_chart(
+                risk_fig,
+                use_container_width=True
             )
 
-        with col2:
+    # =====================================
+    # CANDLESTICK CHART
+    # =====================================
 
-            st.markdown(
-                '''
-                ### PRO
-                $19/month
+    if not trades_df.empty:
 
-                - AI Detection
-                - WhatsApp Alerts
-                - Whale Tracking
-                - Premium Analytics
-                '''
-            )
+        st.subheader("📉 Live Candlestick Chart")
 
-        with col3:
+        symbols = trades_df["symbol"].unique()
 
-            st.markdown(
-                '''
-                ### ENTERPRISE
-                $99/month
-
-                - Full AI Suite
-                - API Access
-                - Unlimited Monitoring
-                - Priority Support
-                '''
-            )
-
-    # ==========================================
-    # SETTINGS
-    # ==========================================
-
-    elif menu == "Settings":
-
-        st.title(
-            "⚙️ Settings"
+        selected_symbol = st.selectbox(
+            "Select Asset",
+            symbols
         )
 
-        st.selectbox(
-            "Theme",
-            [
-                "Dark",
-                "Light"
+        filtered_df = trades_df[
+            trades_df["symbol"] == selected_symbol
+        ]
+
+        if not filtered_df.empty:
+
+            filtered_df["trade_time"] = pd.to_datetime(
+                filtered_df["trade_time"]
+            )
+
+            candle_data = (
+                filtered_df
+                .groupby(
+                    pd.Grouper(
+                        key="trade_time",
+                        freq="1min"
+                    )
+                )
+                .agg({
+                    "price": [
+                        "first",
+                        "max",
+                        "min",
+                        "last"
+                    ]
+                })
+            )
+
+            candle_data.columns = [
+                "open",
+                "high",
+                "low",
+                "close"
             ]
+
+            candle_data = (
+                candle_data
+                .dropna()
+                .reset_index()
+            )
+
+            fig = go.Figure(
+                data=[
+                    go.Candlestick(
+                        x=candle_data["trade_time"],
+                        open=candle_data["open"],
+                        high=candle_data["high"],
+                        low=candle_data["low"],
+                        close=candle_data["close"]
+                    )
+                ]
+            )
+
+            fig.update_layout(
+                title=f"{selected_symbol} Live Chart",
+                height=550
+            )
+
+            st.plotly_chart(
+                fig,
+                use_container_width=True
+            )
+
+    # =====================================
+    # AI SUMMARY SECTION
+    # =====================================
+
+    st.subheader("🧠 AI Market Intelligence")
+
+    if not alerts_df.empty:
+
+        high_risk = alerts_df[
+            alerts_df["risk_level"] == "HIGH"
+        ]
+
+        st.info(
+            f"Detected {len(high_risk)} high-risk market events in live trading streams."
         )
 
-        st.slider(
-            "Refresh Interval",
-            5,
-            60,
-            15
-        )
+    # =====================================
+    # FOOTER
+    # =====================================
 
+    st.divider()
 
-# ==========================================
-# FOOTER
-# ==========================================
-
-st.divider()
-
-st.caption(
-    f"CryptoShield AI © {datetime.now().year}"
-)
+    st.caption(
+        "CryptoShield AI © 2026 • Enterprise Crypto Intelligence SaaS"
+    )
