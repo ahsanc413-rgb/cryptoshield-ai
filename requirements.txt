@@ -8,4 +8,6 @@ streamlit
 plotly
 pandas
 streamlit-authenticator
+streamlit-autorefresh
 twilio
+numpy
