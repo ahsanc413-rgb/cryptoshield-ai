@@ -33,7 +33,7 @@ def get_trades():
 
         .find({}, {"_id": 0})
 
-        .sort("timestamp", -1)
+        
 
         .limit(100)
     )
@@ -53,7 +53,7 @@ def get_alerts():
 
         .find({}, {"_id": 0})
 
-        .sort("timestamp", -1)
+        
 
         .limit(100)
     )
