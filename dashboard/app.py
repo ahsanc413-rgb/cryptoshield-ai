@@ -1,3 +1,8 @@
+# =============================================================
+# dashboard/app.py
+# CryptoShield AI — MongoDB SaaS Dashboard
+# =============================================================
+
 import os
 import sys
 import requests
@@ -5,11 +10,12 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+
 from datetime import datetime
 
-# ==========================================
-# PYTHON PATH FIX
-# ==========================================
+# =============================================================
+# PATH FIX
+# =============================================================
 
 sys.path.append(
     os.path.abspath(
@@ -20,104 +26,115 @@ sys.path.append(
     )
 )
 
-# ==========================================
-# OPTIONAL AUTO REFRESH
-# ==========================================
+# =============================================================
+# IMPORTS
+# =============================================================
 
-AUTO_REFRESH = False
+from backend.utils.auth import (
+    hash_password,
+    verify_password
+)
 
-try:
+from backend.database.users import (
+    create_user,
+    get_user
+)
 
-    from streamlit_autorefresh import st_autorefresh
-
-    AUTO_REFRESH = True
-
-except:
-
-    AUTO_REFRESH = False
-
-# ==========================================
-# STREAMLIT CONFIG
-# ==========================================
+# =============================================================
+# PAGE CONFIG
+# =============================================================
 
 st.set_page_config(
 
     page_title="CryptoShield AI",
 
-    page_icon="🚨",
+    page_icon="🛡️",
 
     layout="wide",
 
     initial_sidebar_state="expanded"
 )
 
-# ==========================================
+# =============================================================
 # CUSTOM CSS
-# ==========================================
+# =============================================================
 
 st.markdown("""
+
 <style>
 
 .stApp {
-    background-color: #050816;
+
+    background-color: #060b14;
+
     color: white;
 }
 
 section[data-testid="stSidebar"] {
-    background-color: #111827;
-}
 
-.metric-card {
-
-    background-color: #111827;
-
-    padding: 20px;
-
-    border-radius: 15px;
-
-    border: 1px solid #1f2937;
+    background-color: #0b1322;
 }
 
 div[data-testid="metric-container"] {
 
-    background-color: #111827;
+    background-color: #0b1322;
 
-    border: 1px solid #1f2937;
+    border: 1px solid rgba(0,229,160,0.2);
+
+    border-radius: 10px;
 
     padding: 15px;
+}
 
-    border-radius: 12px;
+.stButton > button {
+
+    background-color: #00e5a0;
+
+    color: black;
+
+    font-weight: bold;
+
+    border-radius: 8px;
+
+    border: none;
 }
 
 </style>
+
 """, unsafe_allow_html=True)
 
-# ==========================================
+# =============================================================
 # SESSION STATE
-# ==========================================
+# =============================================================
 
 if "logged_in" not in st.session_state:
 
     st.session_state.logged_in = False
 
-# ==========================================
+if "username" not in st.session_state:
+
+    st.session_state.username = ""
+
+# =============================================================
 # SIDEBAR
-# ==========================================
+# =============================================================
 
-st.sidebar.title("🚨 CryptoShield AI")
+with st.sidebar:
 
-st.sidebar.markdown("---")
+    st.title("🛡️ CryptoShield AI")
 
-# ==========================================
-# LOGIN PAGE
-# ==========================================
+    st.markdown("---")
+
+# =============================================================
+# LOGIN / SIGNUP
+# =============================================================
 
 if not st.session_state.logged_in:
 
-    st.title("🚨 CryptoShield AI")
+    st.title("🛡️ CryptoShield AI")
 
     st.subheader(
-        "Real-Time Crypto Risk Intelligence Platform"
+        "Enterprise Crypto Intelligence SaaS"
     )
 
     st.markdown("---")
@@ -127,141 +144,229 @@ if not st.session_state.logged_in:
         "Signup"
     ])
 
-    # ======================================
-    # LOGIN
-    # ======================================
-
-    with login_tab:
-
-        username = st.text_input(
-            "Username"
-        )
-
-        password = st.text_input(
-            "Password",
-            type="password"
-        )
-
-        if st.button("Login"):
-
-            if username == "admin" and password == "admin123":
-
-                st.session_state.logged_in = True
-
-                st.session_state.username = username
-
-                st.success(
-                    "Login successful."
-                )
-
-                st.rerun()
-
-            else:
-
-                st.error(
-                    "Invalid credentials"
-                )
-
-    # ======================================
-    # SIGNUP
-    # ======================================
+    # =========================================================
+    # SIGNUP TAB
+    # =========================================================
 
     with signup_tab:
 
-        new_username = st.text_input(
-            "Create Username"
+        st.subheader("🚀 Create Account")
+
+        su_username = st.text_input(
+            "Username",
+            key="signup_username"
         )
 
-        new_email = st.text_input(
-            "Email"
+        su_email = st.text_input(
+            "Email",
+            key="signup_email"
         )
 
-        new_password = st.text_input(
-            "Create Password",
-            type="password"
+        su_password = st.text_input(
+            "Password",
+            type="password",
+            key="signup_password"
+        )
+
+        su_confirm = st.text_input(
+            "Confirm Password",
+            type="password",
+            key="signup_confirm"
         )
 
         if st.button("Create Account"):
 
-            st.success(
-                "Account created successfully."
-            )
+            try:
 
-            st.info(
-                "You can now login."
-            )
+                # =============================================
+                # VALIDATION
+                # =============================================
+
+                if (
+                    su_username == ""
+                    or
+                    su_email == ""
+                    or
+                    su_password == ""
+                ):
+
+                    st.error(
+                        "Please fill all fields."
+                    )
+
+                elif su_password != su_confirm:
+
+                    st.error(
+                        "Passwords do not match."
+                    )
+
+                else:
+
+                    # =========================================
+                    # HASH PASSWORD
+                    # =========================================
+
+                    hashed_pw = hash_password(
+                        su_password
+                    )
+
+                    # =========================================
+                    # USER DATA
+                    # =========================================
+
+                    user_data = {
+
+                        "username": su_username,
+
+                        "email": su_email,
+
+                        "password": hashed_pw,
+
+                        "plan": "Free",
+
+                        "created_at": str(
+                            datetime.now()
+                        )
+                    }
+
+                    # =========================================
+                    # CREATE USER
+                    # =========================================
+
+                    success = create_user(
+                        user_data
+                    )
+
+                    if success:
+
+                        st.success(
+                            "Account created successfully."
+                        )
+
+                    else:
+
+                        st.error(
+                            "Username already exists."
+                        )
+
+            except Exception as e:
+
+                st.error(str(e))
+
+    # =========================================================
+    # LOGIN TAB
+    # =========================================================
+
+    with login_tab:
+
+        st.subheader("🔐 Login")
+
+        li_username = st.text_input(
+            "Username",
+            key="login_username"
+        )
+
+        li_password = st.text_input(
+            "Password",
+            type="password",
+            key="login_password"
+        )
+
+        if st.button("Login"):
+
+            try:
+
+                user = get_user(
+                    li_username
+                )
+
+                if user:
+
+                    valid = verify_password(
+
+                        li_password,
+
+                        user["password"]
+                    )
+
+                    if valid:
+
+                        st.session_state.logged_in = True
+
+                        st.session_state.username = li_username
+
+                        st.success(
+                            "Login successful."
+                        )
+
+                        st.rerun()
+
+                    else:
+
+                        st.error(
+                            "Invalid password."
+                        )
+
+                else:
+
+                    st.error(
+                        "User not found."
+                    )
+
+            except Exception as e:
+
+                st.error(str(e))
 
     st.stop()
 
-# ==========================================
+# =============================================================
 # LOGGED IN SIDEBAR
-# ==========================================
+# =============================================================
 
-st.sidebar.success(
-    f"Welcome {st.session_state.username}"
-)
+with st.sidebar:
 
-if st.sidebar.button("Logout"):
-
-    st.session_state.logged_in = False
-
-    st.rerun()
-
-st.sidebar.markdown("---")
-
-# ==========================================
-# AUTO REFRESH
-# ==========================================
-
-if AUTO_REFRESH:
-
-    st_autorefresh(
-
-        interval=5000,
-
-        key="dashboard_refresh"
+    st.success(
+        f"Welcome {st.session_state.username}"
     )
 
-# ==========================================
-# HEADER
-# ==========================================
+    if st.button("Logout"):
 
-st.title("🚨 CryptoShield AI")
+        st.session_state.logged_in = False
 
-st.subheader(
-    "Enterprise Crypto Intelligence SaaS Platform"
-)
+        st.session_state.username = ""
 
-# ==========================================
-# BACKEND URL
-# ==========================================
+        st.rerun()
+
+# =============================================================
+# DASHBOARD
+# =============================================================
+
+st.title("📊 CryptoShield AI Dashboard")
 
 API_BASE_URL = (
     "https://cryptoshield-ai-9sak.onrender.com"
 )
 
-# ==========================================
-# FETCH API DATA
-# ==========================================
+# =============================================================
+# FETCH DATA
+# =============================================================
 
 trades = []
 alerts = []
-metrics = {}
 
 try:
 
     trades_response = requests.get(
+
         f"{API_BASE_URL}/api/trades",
+
         timeout=10
     )
 
     alerts_response = requests.get(
-        f"{API_BASE_URL}/api/alerts",
-        timeout=10
-    )
 
-    metrics_response = requests.get(
-        f"{API_BASE_URL}/api/metrics",
+        f"{API_BASE_URL}/api/alerts",
+
         timeout=10
     )
 
@@ -273,76 +378,55 @@ try:
 
         alerts = alerts_response.json()
 
-    if metrics_response.status_code == 200:
-
-        metrics = metrics_response.json()
-
 except Exception as e:
 
-    st.warning(
-        "Backend API temporarily unavailable."
+    st.error(
+        f"API Error: {e}"
     )
 
-# ==========================================
+# =============================================================
 # DATAFRAMES
-# ==========================================
+# =============================================================
 
 trades_df = pd.DataFrame(trades)
 
 alerts_df = pd.DataFrame(alerts)
 
-# ==========================================
+# =============================================================
 # METRICS
-# ==========================================
+# =============================================================
 
-metric1, metric2, metric3, metric4 = st.columns(4)
+m1, m2, m3, m4 = st.columns(4)
 
-metric1.metric(
-
-    "Total Trades",
-
-    metrics.get(
-        "total_trades",
-        len(trades_df)
-    )
+m1.metric(
+    "Trades",
+    len(trades_df)
 )
 
-metric2.metric(
-
-    "Risk Alerts",
-
-    metrics.get(
-        "total_alerts",
-        len(alerts_df)
-    )
+m2.metric(
+    "Alerts",
+    len(alerts_df)
 )
 
-metric3.metric(
-
-    "Active Assets",
-
-    metrics.get(
-        "active_assets",
-        trades_df["symbol"].nunique()
-        if not trades_df.empty
-        else 0
-    )
+m3.metric(
+    "Assets",
+    trades_df["symbol"].nunique()
+    if not trades_df.empty
+    else 0
 )
 
-metric4.metric(
-
-    "System Status",
-
+m4.metric(
+    "System",
     "LIVE"
 )
 
 st.divider()
 
-# ==========================================
-# MARKET TABLE
-# ==========================================
+# =============================================================
+# LIVE TRADES
+# =============================================================
 
-st.subheader("📈 Live Market Trades")
+st.subheader("📈 Live Trades")
 
 if not trades_df.empty:
 
@@ -357,15 +441,15 @@ if not trades_df.empty:
 
 else:
 
-    st.info(
-        "Waiting for live market data..."
+    st.warning(
+        "No live trades available."
     )
 
-# ==========================================
-# ALERTS TABLE
-# ==========================================
+# =============================================================
+# ALERTS
+# =============================================================
 
-st.subheader("🚨 Live Risk Alerts")
+st.subheader("🚨 Risk Alerts")
 
 if not alerts_df.empty:
 
@@ -381,28 +465,35 @@ if not alerts_df.empty:
 else:
 
     st.success(
-        "No high-risk alerts detected."
+        "No alerts detected."
     )
 
-# ==========================================
+# =============================================================
 # CHARTS
-# ==========================================
+# =============================================================
 
-chart_left, chart_right = st.columns(2)
+left_chart, right_chart = st.columns(2)
 
-# ==========================================
-# ASSET DISTRIBUTION
-# ==========================================
+# =============================================================
+# PIE CHART
+# =============================================================
 
-with chart_left:
+with left_chart:
 
     st.subheader("📊 Asset Distribution")
 
-    if not trades_df.empty:
+    if (
+        not trades_df.empty
+        and
+        "symbol" in trades_df.columns
+    ):
 
         symbol_counts = (
+
             trades_df["symbol"]
+
             .value_counts()
+
             .reset_index()
         )
 
@@ -411,7 +502,7 @@ with chart_left:
             "count"
         ]
 
-        fig_pie = px.pie(
+        fig = px.pie(
 
             symbol_counts,
 
@@ -422,178 +513,80 @@ with chart_left:
             template="plotly_dark"
         )
 
-        fig_pie.update_layout(
+        fig.update_layout(
 
-            paper_bgcolor="#050816",
+            paper_bgcolor="#0b1322",
 
-            plot_bgcolor="#050816"
+            plot_bgcolor="#0b1322"
         )
 
         st.plotly_chart(
 
-            fig_pie,
+            fig,
 
             use_container_width=True
         )
 
-# ==========================================
-# RISK CHART
-# ==========================================
+# =============================================================
+# RISK BAR CHART
+# =============================================================
 
-with chart_right:
+with right_chart:
 
     st.subheader("⚠️ Risk Levels")
 
-    if not alerts_df.empty:
+    if (
+        not alerts_df.empty
+        and
+        "risk_level" in alerts_df.columns
+    ):
 
-        if "risk_level" in alerts_df.columns:
+        risk_counts = (
 
-            risk_counts = (
-                alerts_df["risk_level"]
-                .value_counts()
-                .reset_index()
-            )
+            alerts_df["risk_level"]
 
-            risk_counts.columns = [
-                "risk_level",
-                "count"
-            ]
+            .value_counts()
 
-            fig_bar = px.bar(
-
-                risk_counts,
-
-                x="risk_level",
-
-                y="count",
-
-                color="risk_level",
-
-                template="plotly_dark"
-            )
-
-            fig_bar.update_layout(
-
-                paper_bgcolor="#050816",
-
-                plot_bgcolor="#050816"
-            )
-
-            st.plotly_chart(
-
-                fig_bar,
-
-                use_container_width=True
-            )
-
-# ==========================================
-# LIVE CANDLESTICK
-# ==========================================
-
-if not trades_df.empty:
-
-    if "symbol" in trades_df.columns:
-
-        st.subheader("📉 Live Candlestick")
-
-        symbols = trades_df["symbol"].unique()
-
-        selected_symbol = st.selectbox(
-
-            "Select Coin",
-
-            symbols
+            .reset_index()
         )
 
-        filtered_df = trades_df[
-            trades_df["symbol"]
-            == selected_symbol
+        risk_counts.columns = [
+            "risk_level",
+            "count"
         ]
 
-        if not filtered_df.empty:
+        fig2 = px.bar(
 
-            if "trade_time" in filtered_df.columns:
+            risk_counts,
 
-                filtered_df[
-                    "trade_time"
-                ] = pd.to_datetime(
-                    filtered_df["trade_time"]
-                )
+            x="risk_level",
 
-                candle_data = (
-                    filtered_df
-                    .groupby(
-                        pd.Grouper(
-                            key="trade_time",
-                            freq="1min"
-                        )
-                    )
-                    .agg({
-                        "price": [
-                            "first",
-                            "max",
-                            "min",
-                            "last"
-                        ]
-                    })
-                )
+            y="count",
 
-                candle_data.columns = [
+            color="risk_level",
 
-                    "open",
-                    "high",
-                    "low",
-                    "close"
-                ]
+            template="plotly_dark"
+        )
 
-                candle_data = (
-                    candle_data
-                    .dropna()
-                    .reset_index()
-                )
+        fig2.update_layout(
 
-                if not candle_data.empty:
+            paper_bgcolor="#0b1322",
 
-                    fig = go.Figure(
+            plot_bgcolor="#0b1322"
+        )
 
-                        data=[
+        st.plotly_chart(
 
-                            go.Candlestick(
+            fig2,
 
-                                x=candle_data["trade_time"],
+            use_container_width=True
+        )
 
-                                open=candle_data["open"],
+# =============================================================
+# AI SUMMARY
+# =============================================================
 
-                                high=candle_data["high"],
-
-                                low=candle_data["low"],
-
-                                close=candle_data["close"]
-                            )
-                        ]
-                    )
-
-                    fig.update_layout(
-
-                        template="plotly_dark",
-
-                        paper_bgcolor="#050816",
-
-                        plot_bgcolor="#050816",
-
-                        height=600
-                    )
-
-                    st.plotly_chart(
-
-                        fig,
-
-                        use_container_width=True
-                    )
-
-# ==========================================
-# AI MARKET SUMMARY
-# ==========================================
+st.divider()
 
 st.subheader("🧠 AI Market Intelligence")
 
@@ -610,13 +603,13 @@ else:
         "Market currently stable."
     )
 
-# ==========================================
+# =============================================================
 # FOOTER
-# ==========================================
+# =============================================================
 
 st.divider()
 
 st.caption(
 
-    f"CryptoShield AI © 2026 | Updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+    f"CryptoShield AI © 2026 | Updated: {datetime.now()}"
 )
