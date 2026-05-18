@@ -1,4 +1,6 @@
 from fastapi import FastAPI
+from bson import json_util
+import json
 
 from backend.database.mongo_client import (
     trades_collection,
@@ -21,44 +23,34 @@ def home():
     }
 
 # ======================================================
-# GET TRADES
+# TRADES
 # ======================================================
 
 @app.get("/api/trades")
 def get_trades():
 
     trades = list(
-
-        trades_collection
-
-        .find({}, {"_id": 0})
-
-        
-
-        .limit(100)
+        trades_collection.find().limit(100)
     )
 
-    return trades
+    return json.loads(
+        json_util.dumps(trades)
+    )
 
 # ======================================================
-# GET ALERTS
+# ALERTS
 # ======================================================
 
 @app.get("/api/alerts")
 def get_alerts():
 
     alerts = list(
-
-        alerts_collection
-
-        .find({}, {"_id": 0})
-
-        
-
-        .limit(100)
+        alerts_collection.find().limit(100)
     )
 
-    return alerts
+    return json.loads(
+        json_util.dumps(alerts)
+    )
 
 # ======================================================
 # METRICS
